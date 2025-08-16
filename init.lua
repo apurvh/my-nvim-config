@@ -43,7 +43,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   desc = "Briefly highlight yanked text",
 })
 
--- ── Plugin manager: lazy.nvim (no plugins yet) ────────────────────────────────
+-- ── Plugin manager: lazy.nvim ───────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
@@ -56,7 +56,51 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
-  -- no plugins yet — keeping it truly minimal
+  -- Telescope core
+  {
+    "nvim-telescope/telescope.nvim",
+    version = false,
+    dependencies = { "nvim-lua/plenary.nvim" },
+    keys = {
+      { "<leader>sf", function() require("telescope.builtin").find_files() end, desc = "Search files" },
+      { "<leader>sg", function() require("telescope.builtin").live_grep() end,  desc = "Grep in project" },
+      { "<leader>sd", function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
+      { "<leader>sw", function() require("telescope.builtin").grep_string() end, desc = "Search word under cursor" },
+      { "<leader><leader>", function()
+          require("telescope.builtin").buffers({
+            sort_mru = true,
+            sort_lastused = true,
+            ignore_current_buffer = true,
+          })
+        end,
+        mode = "n",
+        desc = "Buffers (MRU)"
+      },
+    },
+    opts = {
+      defaults = {
+        sorting_strategy = "ascending",
+        layout_config = { prompt_position = "top" },
+      },
+      pickers = {
+        buffers = {
+          sort_mru = true,
+          sort_lastused = true,
+          ignore_current_buffer = true,
+        },
+      },
+    },
+    config = function(_, opts)
+      require("telescope").setup(opts)
+      pcall(require("telescope").load_extension, "fzf") -- will load once built
+    end,
+  },
+
+  -- Native FZF sorter (speed)
+  {
+    "nvim-telescope/telescope-fzf-native.nvim",
+    build = "make",   -- or: build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release"
+  },
 }, {
   change_detection = { notify = false },
 })
