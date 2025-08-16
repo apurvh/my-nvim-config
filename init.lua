@@ -67,12 +67,12 @@ require("lazy").setup({
       { "<leader>sd", function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
       { "<leader>sw", function() require("telescope.builtin").grep_string() end, desc = "Search word under cursor" },
       { "<leader><leader>", function()
-          require("telescope.builtin").buffers({
-            sort_mru = true,
-            sort_lastused = true,
-            ignore_current_buffer = true,
-          })
-        end,
+        require("telescope.builtin").buffers({
+          sort_mru = true,
+          sort_lastused = true,
+          ignore_current_buffer = true,
+        })
+      end,
         mode = "n",
         desc = "Buffers (MRU)"
       },
@@ -105,6 +105,27 @@ require("lazy").setup({
     "nvim-telescope/telescope-fzf-native.nvim",
     build = "make",   -- or: build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release"
   },
+
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    main = "nvim-treesitter.configs",
+    opts = {
+      -- keep this tight; add more languages later as you need them
+      ensure_installed = {
+        "lua", "vim", "vimdoc", "query",
+        "python",
+        "bash", "json", "yaml", "toml",
+        "markdown", "regex",
+        "html", "css", "javascript", "typescript", "tsx",
+      },
+      auto_install = true,  -- install a parser automatically when you open a new filetype
+      highlight = { enable = true, additional_vim_regex_highlighting = false },
+      -- TS indent can be opinionated; disable for python to avoid surprises
+      indent = { enable = true, disable = { "python" } },
+    },
+  }
+
 }, {
-  change_detection = { notify = false },
-})
+    change_detection = { notify = false },
+  })
