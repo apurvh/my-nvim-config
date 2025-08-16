@@ -42,3 +42,21 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   callback = function() vim.highlight.on_yank({ timeout = 120 }) end,
   desc = "Briefly highlight yanked text",
 })
+
+-- ── Plugin manager: lazy.nvim (no plugins yet) ────────────────────────────────
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+  -- no plugins yet — keeping it truly minimal
+}, {
+  change_detection = { notify = false },
+})
