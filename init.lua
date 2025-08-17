@@ -35,7 +35,7 @@ vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highl
 
 -- Quality-of-life: save/quit bindings (optional, remove if you dislike)
 vim.keymap.set("n", "<leader>w", "<cmd>write<cr>", { desc = "Save" })
-vim.keymap.set("n", "<leader>q", "<cmd>quit<cr>",  { desc = "Quit" })
+vim.keymap.set("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit" })
 
 -- Minimal autocmds: highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {
@@ -62,24 +62,26 @@ require("lazy").setup({
     version = false,
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-      { "<leader>sf", function() require("telescope.builtin").find_files() end, desc = "Search files" },
-      { "<leader>sg", function() require("telescope.builtin").live_grep() end,  desc = "Grep in project" },
+      { "<leader>sf", function() require("telescope.builtin").find_files() end,  desc = "Search files" },
+      { "<leader>sg", function() require("telescope.builtin").live_grep() end,   desc = "Grep in project" },
       { "<leader>sd", function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
       { "<leader>sw", function() require("telescope.builtin").grep_string() end, desc = "Search word under cursor" },
-      { "<leader><leader>", function()
-        require("telescope.builtin").buffers({
-          sort_mru = true,
-          sort_lastused = true,
-          ignore_current_buffer = true,
-        })
-      end,
+      {
+        "<leader><leader>",
+        function()
+          require("telescope.builtin").buffers({
+            sort_mru = true,
+            sort_lastused = true,
+            ignore_current_buffer = true,
+          })
+        end,
         mode = "n",
         desc = "Buffers (MRU)"
       },
-      { "<leader>sr", function() require("telescope.builtin").resume() end, desc = "Resume last Telescope" },
+      { "<leader>sr", function() require("telescope.builtin").resume() end,                                        desc = "Resume last Telescope" },
       { "<leader>sa", function() require("telescope.builtin").find_files({ hidden = true, no_ignore = true }) end, desc = "Find all files (hidden+ignored)" },
-      { "<leader>st", function() require("telescope.builtin").treesitter() end, desc = "Buffer symbols (Treesitter)" },
-      { "<leader>sj", function() require("telescope.builtin").jumplist() end, desc = "Jumplist" },
+      { "<leader>st", function() require("telescope.builtin").treesitter() end,                                    desc = "Buffer symbols (Treesitter)" },
+      { "<leader>sj", function() require("telescope.builtin").jumplist() end,                                      desc = "Jumplist" },
     },
     opts = {
       defaults = {
@@ -103,7 +105,7 @@ require("lazy").setup({
   -- Native FZF sorter (speed)
   {
     "nvim-telescope/telescope-fzf-native.nvim",
-    build = "make",   -- or: build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release"
+    build = "make", -- or: build = "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release"
   },
 
   {
@@ -119,7 +121,7 @@ require("lazy").setup({
         "markdown", "regex",
         "html", "css", "javascript", "typescript", "tsx",
       },
-      auto_install = true,  -- install a parser automatically when you open a new filetype
+      auto_install = true, -- install a parser automatically when you open a new filetype
       highlight = { enable = true, additional_vim_regex_highlighting = false },
       -- TS indent can be opinionated; disable for python to avoid surprises
       indent = { enable = true, disable = { "python" } },
@@ -193,20 +195,20 @@ require("lazy").setup({
       -- Pick explicit fast formatters where we know them; the rest will use LSP if available
       formatters_by_ft = {
         -- Python via Ruff
-        python = { "ruff_format" },
+        python           = { "ruff_format" },
 
         -- Prettier family (daemon first, CLI fallback)
-        json   = { "prettierd", "prettier" },
-        jsonc  = { "prettierd", "prettier" },
-        yaml   = { "prettierd", "prettier" },
-        javascript         = { "prettierd", "prettier" },
-        javascriptreact    = { "prettierd", "prettier" },
-        typescript         = { "prettierd", "prettier" },
-        typescriptreact    = { "prettierd", "prettier" },
-        css                = { "prettierd", "prettier" },
-        html               = { "prettierd", "prettier" },
-        markdown           = { "prettierd", "prettier" },
-        ["markdown.mdx"]   = { "prettierd", "prettier" }, -- if your ft is this; harmless if absent
+        json             = { "prettierd", "prettier" },
+        jsonc            = { "prettierd", "prettier" },
+        yaml             = { "prettierd", "prettier" },
+        javascript       = { "prettierd", "prettier" },
+        javascriptreact  = { "prettierd", "prettier" },
+        typescript       = { "prettierd", "prettier" },
+        typescriptreact  = { "prettierd", "prettier" },
+        css              = { "prettierd", "prettier" },
+        html             = { "prettierd", "prettier" },
+        markdown         = { "prettierd", "prettier" },
+        ["markdown.mdx"] = { "prettierd", "prettier" }, -- if your ft is this; harmless if absent
       },
 
       -- ✅ Enable for ALL filetypes
@@ -223,8 +225,30 @@ require("lazy").setup({
 
       require("conform").setup(opts)
     end,
-  }
+  },
+
+  {
+    "folke/flash.nvim",
+    event = "VeryLazy",
+    opts = {}, -- default behavior is good; we can tweak later
+    keys = {
+      -- Jump anywhere by typing a few chars, then press the shown label
+      { "s",     mode = { "n", "x", "o" }, function() require("flash").jump() end,              desc = "Flash jump" },
+
+      -- Treesitter-powered targets (functions, classes, params, blocks…)
+      { "S",     mode = { "n", "x", "o" }, function() require("flash").treesitter() end,        desc = "Flash Treesitter" },
+
+      -- Operator-pending: run an operator at a remote location (e.g., `y r` then label)
+      { "r",     mode = "o",               function() require("flash").remote() end,            desc = "Flash remote" },
+
+      -- Treesitter search (great in operator/visual to select syntactic objects)
+      { "R",     mode = { "o", "x" },      function() require("flash").treesitter_search() end, desc = "Flash TS search" },
+
+      -- Optional: use Flash inside `/` or `?` (toggle while typing the search)
+      { "<C-s>", mode = "c",               function() require("flash").toggle() end,            desc = "Toggle Flash in search" },
+    },
+  },
 
 }, {
-    change_detection = { notify = false },
-  })
+  change_detection = { notify = false },
+})
