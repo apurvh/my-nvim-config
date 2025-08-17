@@ -6,7 +6,7 @@ vim.keymap.set({ "n", "v" }, "<Space>", "<Nop>", { silent = true })
 -- Essentials: predictable editing, UI, and performance
 vim.opt.termguicolors = true
 vim.opt.number = true
-vim.opt.relativenumber = true
+vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.wrap = false
 vim.opt.ignorecase = true
@@ -124,6 +124,105 @@ require("lazy").setup({
       -- TS indent can be opinionated; disable for python to avoid surprises
       indent = { enable = true, disable = { "python" } },
     },
+  },
+
+  {
+    "williamboman/mason.nvim",
+    main = "mason",
+    build = ":MasonUpdate",
+    opts = {},
+  },
+
+  {
+    "williamboman/mason-lspconfig.nvim",
+    main = "mason-lspconfig",
+    opts = {
+      ensure_installed = { "lua_ls", "basedpyright", "ruff" },
+    },
+  },
+
+  {
+    "neovim/nvim-lspconfig",
+    config = function()
+      local lspconfig = require("lspconfig")
+      local has_tb, tb = pcall(require, "telescope.builtin")
+
+      -- buffer-local maps for Python LSP buffers
+      local function on_attach(_, bufnr)
+        local map = function(lhs, rhs, desc)
+          vim.keymap.set("n", lhs, rhs, { buffer = bufnr, desc = desc })
+        end
+        -- defs via Telescope if present; fallback to raw LSP
+        if has_tb then
+          map("<leader>ld", tb.lsp_definitions, "Goto definition")
+        else
+          map("<leader>ld", vim.lsp.buf.definition, "Goto definition")
+        end
+        map("<leader>la", vim.lsp.buf.code_action, "Code actions")
+      end
+
+      -- Python type checker: basedpyright
+      lspconfig.basedpyright.setup({
+        on_attach = on_attach,
+        settings = {
+          basedpyright = {
+            analysis = {
+              diagnosticMode = "openFilesOnly",
+              autoImportCompletions = true,
+            },
+          },
+        },
+      })
+
+      -- Python lints/quick fixes: Ruff LSP
+      lspconfig.ruff.setup({
+        on_attach = function(client, bufnr)
+          -- prefer basedpyright's hover if both attach
+          client.server_capabilities.hoverProvider = false
+          on_attach(client, bufnr)
+        end,
+        init_options = { settings = { logLevel = "error" } },
+      })
+    end,
+  },
+
+  {
+    "stevearc/conform.nvim",
+    opts = {
+      notify_on_error = false,
+      -- Pick explicit fast formatters where we know them; the rest will use LSP if available
+      formatters_by_ft = {
+        -- Python via Ruff
+        python = { "ruff_format" },
+
+        -- Prettier family (daemon first, CLI fallback)
+        json   = { "prettierd", "prettier" },
+        jsonc  = { "prettierd", "prettier" },
+        yaml   = { "prettierd", "prettier" },
+        javascript         = { "prettierd", "prettier" },
+        javascriptreact    = { "prettierd", "prettier" },
+        typescript         = { "prettierd", "prettier" },
+        typescriptreact    = { "prettierd", "prettier" },
+        css                = { "prettierd", "prettier" },
+        html               = { "prettierd", "prettier" },
+        markdown           = { "prettierd", "prettier" },
+        ["markdown.mdx"]   = { "prettierd", "prettier" }, -- if your ft is this; harmless if absent
+      },
+
+      -- ✅ Enable for ALL filetypes
+      -- Conform will try the ft-specific formatter first; if none, it will try LSP.
+      -- If neither is available, nothing happens (no errors, no surprises).
+      format_on_save = {
+        timeout_ms = 1000,
+        lsp_fallback = true,
+      },
+    },
+    config = function(_, opts)
+      -- Ensure Mason bin dir is on PATH so prettierd/ruff are found
+      vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+
+      require("conform").setup(opts)
+    end,
   }
 
 }, {
