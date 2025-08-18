@@ -50,4 +50,11 @@ s - flash jump
 / to to search, n to jump, . to repeat
 ```
 
+#### Copy and paste
+
+```
+<leader> a - copy all text in current buffer
+p] p[ - paste in the current indent level
+```
+
 ===============================

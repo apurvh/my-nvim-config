@@ -43,6 +43,12 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   desc = "Briefly highlight yanked text",
 })
 
+vim.keymap.set("n", "<leader>a", ":%y+<CR>", { desc = "Yank entire buffer to clipboard" })
+
+-- Indent/outdent visual selections with Tab / Shift-Tab (great after you paste)
+vim.keymap.set("x", "<Tab>", ">gv", { desc = "Indent selection and keep it selected" })
+vim.keymap.set("x", "<S-Tab>", "<gv", { desc = "Outdent selection and keep it selected" })
+
 -- ── Plugin manager: lazy.nvim ───────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
