@@ -263,6 +263,34 @@ require("lazy").setup({
     },
   },
 
+  {
+    "numToStr/Comment.nvim",
+    -- only our <leader>/> mapping; do NOT add default gc/gb maps
+    opts = { mappings = { basic = false, extra = false } },
+    keys = {
+      -- Normal mode: toggle comment on the current line
+      {
+        "<leader>/",
+        function()
+          require("Comment.api").toggle.linewise.current()
+        end,
+        desc = "Toggle comment (line)"
+      },
+
+      -- Visual mode: toggle comment on the selection
+      {
+        "<leader>/",
+        function()
+          local api = require("Comment.api")
+          local esc = vim.api.nvim_replace_termcodes("<ESC>", true, false, true)
+          vim.api.nvim_feedkeys(esc, "nx", false)
+          api.toggle.linewise(vim.fn.visualmode())
+        end,
+        mode = "x",
+        desc = "Toggle comment (selection)"
+      },
+    },
+  },
 }, {
   change_detection = { notify = false },
 })
