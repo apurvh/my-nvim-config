@@ -13,13 +13,16 @@ created it after testing things with kickstart for 6 months
 
 #### Basics
 
+```
 jj or jf - exit insert mode
 <leader> w - save
 <leader> q - quite
 vim motions such as ci", d}, yw, yyp
+```
 
 #### Search with telescope
 
+```
 <leader> sf - search file names
 <leader> sg - grep search
 <leader> sd - search diagnostics
@@ -29,17 +32,22 @@ vim motions such as ci", d}, yw, yyp
 <leader> sa - search all files
 <leader> st - search buffer symbols from treesitter
 <leader> sj - search jump list
+```
 
 #### LSP keymaps
 
+```
 <leader> ld - go to def
 <leader> la - open code actions
 format-on-save
+```
 
 #### Navigation
 
+```
 s - flash jump
 `C-o` back / `C-i` forward
 / to to search, n to jump, . to repeat
+```
 
 ===============================
