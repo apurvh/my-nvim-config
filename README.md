@@ -59,4 +59,8 @@ zz - center the current line in the window
 p] p[ - paste in the current indent level
 ```
 
-===============================
+#### Others
+
+```
+<leader> / - comment/uncomment
+```
