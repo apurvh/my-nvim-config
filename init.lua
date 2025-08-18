@@ -43,7 +43,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   desc = "Briefly highlight yanked text",
 })
 
-vim.keymap.set("n", "<leader>a", ":%y+<CR>", { desc = "Yank entire buffer to clipboard" })
+-- Copy entire buffer → system clipboard
+vim.keymap.set("n", "<leader>by", ":%y+<CR>", { desc = "Buffer → clipboard" })
+
+-- Replace entire buffer from system clipboard (no yank pollution)
+vim.keymap.set("n", "<leader>bp", function()
+  local lines = vim.fn.getreg("+", 1, true)          -- list of lines from clipboard
+  if type(lines) == "string" then lines = { lines } end
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, lines) -- replace buffer in one undo step
+end, { desc = "Clipboard → buffer (replace all)" })
 
 -- Indent/outdent visual selections with Tab / Shift-Tab (great after you paste)
 vim.keymap.set("x", "<Tab>", ">gv", { desc = "Indent selection and keep it selected" })

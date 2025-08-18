@@ -53,7 +53,8 @@ s - flash jump
 #### Copy and paste
 
 ```
-<leader> a - copy all text in current buffer
+<leader> by - copy all text in current buffer
+<leader> bp - replace current buffer with clipboard
 p] p[ - paste in the current indent level
 ```
 
