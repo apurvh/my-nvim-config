@@ -291,6 +291,121 @@ require("lazy").setup({
       },
     },
   },
+
+  -- Debug Adapter Protocol core
+  {
+    "mfussenegger/nvim-dap",
+    keys = function()
+      local dap = require("dap")
+      local map = function(lhs, rhs, desc)
+        return { lhs, rhs, desc = desc, mode = "n", silent = true }
+      end
+      return {
+        map("<leader>xb", function() dap.toggle_breakpoint() end, "DAP: Toggle breakpoint"),
+        map("<leader>xc", function() dap.continue() end, "DAP: Continue/Start"),
+        map("<leader>xo", function() dap.step_over() end, "DAP: Step over"),
+        map("<leader>xi", function() dap.step_into() end, "DAP: Step into"),
+        map("<leader>xO", function() dap.step_out() end, "DAP: Step out"),
+        map("<leader>xr", function() dap.repl.open() end, "DAP: REPL open"),
+        map("<leader>xB", function()
+          require("dap").set_breakpoint(vim.fn.input("Breakpoint Condition: "))
+        end, "DAP: Conditional breakpoint"),
+      }
+    end,
+    config = function()
+      local uv  = vim.uv or vim.loop
+      local sep = package.config:sub(1, 1)
+      local dap = require("dap")
+
+      -- Find project root by walking up for markers
+      local function project_root()
+        local buf = vim.api.nvim_buf_get_name(0)
+        local dir = (buf ~= "" and vim.fn.fnamemodify(buf, ":p:h")) or uv.cwd()
+        local markers = { "pyproject.toml", "setup.cfg", "setup.py", ".git" }
+        while dir and dir ~= "/" do
+          for _, m in ipairs(markers) do
+            if uv.fs_stat(dir .. sep .. m) then return dir end
+          end
+          local parent = vim.fn.fnamemodify(dir, ":h")
+          if parent == dir then break end
+          dir = parent
+        end
+        return uv.cwd()
+      end
+
+      -- Dotted module from current buffer (for `python -m <module>`)
+      local function current_module_name()
+        local file = vim.api.nvim_buf_get_name(0)
+        local root = project_root()
+        if file:sub(1, #root) == root then file = file:sub(#root + 2) end
+        local mod = file:gsub("%.py$", ""):gsub("[/\\]", ".")
+        mod = mod:gsub("%.__init$", "")
+        return mod
+      end
+
+      -- STRICT: use <root>/.venv only (no fallback)
+      local function python_path()
+        local root = project_root()
+        local bin  = (uv.os_uname().sysname == "Windows_NT") and ("Scripts" .. sep .. "python.exe")
+            or ("bin" .. sep .. "python")
+        local p    = table.concat({ root, ".venv", bin }, sep)
+        if uv.fs_stat(p) then return p end
+        return nil
+      end
+
+      -- Lazy adapter: resolved only when a session starts
+      dap.adapters.python = function(cb)
+        local py = python_path()
+        if not py then
+          vim.schedule(function()
+            vim.notify(
+              "DAP: no <project>/.venv Python found.\nRun:\n  uv venv\n  uv add --dev debugpy && uv sync",
+              vim.log.levels.ERROR
+            )
+          end)
+          return
+        end
+        cb({ type = "executable", command = py, args = { "-m", "debugpy.adapter" } })
+      end
+
+      -- Only the "run as module" config (Option A)
+      dap.configurations.python = {
+        {
+          type = "python",
+          request = "launch",
+          name = "Python: current file (module)",
+          module = current_module_name, -- runs `python -m <module>`
+          cwd = project_root,
+          pythonPath = python_path,     -- pinned to <root>/.venv
+          console = "integratedTerminal",
+          justMyCode = false,
+          -- Uncomment while debugging setup:
+          -- stopOnEntry = true,
+          env = { DEBUGPY_LOG_DIR = vim.fn.stdpath("state") .. "/debugpy-logs" },
+        },
+      }
+    end,
+  }
+  ,
+
+  -- DAP UI (nice sidebar + scopes, stacks, breakpoints)
+  {
+    "rcarriga/nvim-dap-ui",
+    dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+    opts = {},
+    config = function(_, opts)
+      local dap, dapui = require("dap"), require("dapui")
+      dapui.setup(opts)
+      -- Auto open/close the UI when sessions start/stop
+      dap.listeners.after.event_initialized["dapui"] = function() dapui.open() end
+      -- dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
+      -- dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
+      -- Handy toggle
+      vim.keymap.set("n", "<leader>xu", function() dapui.toggle() end, { desc = "DAP UI toggle" })
+    end,
+  },
+
+
 }, {
   change_detection = { notify = false },
 })
