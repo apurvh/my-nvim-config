@@ -59,6 +59,12 @@ zz - center the current line in the window
 p] p[ - paste in the current indent level
 ```
 
+#### Copy and paste
+
+```
+K - preview diagnostics and LSP info
+```
+
 #### Others
 
 ```
