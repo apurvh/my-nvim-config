@@ -57,6 +57,101 @@ end, { desc = "Clipboard → buffer (replace all)" })
 vim.keymap.set("x", "<Tab>", ">gv", { desc = "Indent selection and keep it selected" })
 vim.keymap.set("x", "<S-Tab>", "<gv", { desc = "Outdent selection and keep it selected" })
 
+-- keep inline diagnostics visible
+vim.diagnostic.config({
+  virtual_text = { spacing = 2, prefix = "●" },
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+  float = { border = "rounded", source = "if_many" },
+})
+
+do
+  local hover_state = { win = nil }
+
+  local function open_combined_float()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+
+    -- gather diagnostics for the line
+    local lines, diags = {}, vim.diagnostic.get(bufnr, { lnum = lnum })
+    if #diags > 0 then
+      local sev = {
+        [vim.diagnostic.severity.ERROR] = "Error",
+        [vim.diagnostic.severity.WARN]  = "Warn",
+        [vim.diagnostic.severity.INFO]  = "Info",
+        [vim.diagnostic.severity.HINT]  = "Hint",
+      }
+      table.insert(lines, "## Diagnostics")
+      for _, d in ipairs(diags) do
+        table.insert(lines, string.format("- **%s**: %s", sev[d.severity] or "Diag", (d.message or ""):gsub("\n", " ")))
+      end
+      table.insert(lines, "")
+    end
+
+    -- pick a client + encoding to avoid the warning
+    local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
+    local client
+    for _, c in ipairs(get_clients({ bufnr = bufnr })) do
+      if c.supports_method and c:supports_method("textDocument/hover") then
+        client = c; break
+      end
+      client = client or c
+    end
+    local encoding = (client and client.offset_encoding) or "utf-16"
+    local params = vim.lsp.util.make_position_params(0, encoding)
+
+    vim.lsp.buf_request(bufnr, "textDocument/hover", params, function(err, result)
+      if not err and result and result.contents then
+        local hover = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
+        hover = vim.split(table.concat(hover, "\n"), "\n", { trimempty = true })
+        if #hover == 0 then hover = nil end
+        if #hover > 0 then
+          table.insert(lines, "## Hover")
+          vim.list_extend(lines, hover)
+        end
+      end
+
+      if hover == nil and vim.tbl_isempty(lines) then
+        return vim.lsp.buf.hover()
+      end
+
+
+      local fbuf, fwin = vim.lsp.util.open_floating_preview(lines, "markdown", { border = "rounded", focusable = true })
+      hover_state.win = fwin
+
+      -- focus the float so buffer-local mappings work
+      vim.api.nvim_set_current_win(fwin)
+
+      -- close helper
+      local function close_float()
+        if hover_state.win and vim.api.nvim_win_is_valid(hover_state.win) then
+          pcall(vim.api.nvim_win_close, hover_state.win, true)
+        end
+        hover_state.win = nil
+      end
+
+      -- allow q / Esc to close the float
+      for _, key in ipairs({ "q", "<Esc>" }) do
+        vim.keymap.set("n", key, close_float, { buffer = fbuf, nowait = true, noremap = true, silent = true })
+      end
+    end)
+  end
+
+  -- K toggles the combined float
+  vim.keymap.set("n", "K", function()
+    if hover_state.win and vim.api.nvim_win_is_valid(hover_state.win) then
+      pcall(vim.api.nvim_win_close, hover_state.win, true)
+      hover_state.win = nil
+    else
+      open_combined_float()
+    end
+  end, { desc = "Diagnostics + LSP hover (toggle)" })
+end
+
+
+
 -- ── Plugin manager: lazy.nvim ───────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
