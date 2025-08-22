@@ -108,7 +108,7 @@ do
         hover = vim.split(table.concat(hover, "\n"), "\n", { trimempty = true })
         if #hover == 0 then hover = nil end
         if #hover > 0 then
-          table.insert(lines, "## Hover")
+          table.insert(lines, "## LSP")
           vim.list_extend(lines, hover)
         end
       end
