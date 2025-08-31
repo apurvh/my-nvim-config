@@ -57,7 +57,10 @@ end, { desc = "Clipboard → buffer (replace all)" })
 vim.keymap.set("x", "<Tab>", ">gv", { desc = "Indent selection and keep it selected" })
 vim.keymap.set("x", "<S-Tab>", "<gv", { desc = "Outdent selection and keep it selected" })
 
--- keep inline diagnostics visible
+
+
+
+-- inline diagnostics (end-of-line), no auto popups
 vim.diagnostic.config({
   virtual_text = { spacing = 2, prefix = "●" },
   signs = true,
@@ -74,8 +77,9 @@ do
     local bufnr = vim.api.nvim_get_current_buf()
     local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
 
-    -- gather diagnostics for the line
-    local lines, diags = {}, vim.diagnostic.get(bufnr, { lnum = lnum })
+    -- collect diagnostics for the line
+    local lines = {}
+    local diags = vim.diagnostic.get(bufnr, { lnum = lnum })
     if #diags > 0 then
       local sev = {
         [vim.diagnostic.severity.ERROR] = "Error",
@@ -85,12 +89,13 @@ do
       }
       table.insert(lines, "## Diagnostics")
       for _, d in ipairs(diags) do
-        table.insert(lines, string.format("- **%s**: %s", sev[d.severity] or "Diag", (d.message or ""):gsub("\n", " ")))
+        local msg = (d.message or ""):gsub("\r?\n", " ")
+        table.insert(lines, string.format("- **%s**: %s", sev[d.severity] or "Diag", msg))
       end
       table.insert(lines, "")
     end
 
-    -- pick a client + encoding to avoid the warning
+    -- pick client & encoding (prevents position_encoding warning)
     local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
     local client
     for _, c in ipairs(get_clients({ bufnr = bufnr })) do
@@ -102,29 +107,31 @@ do
     local encoding = (client and client.offset_encoding) or "utf-16"
     local params = vim.lsp.util.make_position_params(0, encoding)
 
+    -- request hover and render
     vim.lsp.buf_request(bufnr, "textDocument/hover", params, function(err, result)
+      local hover_lines
       if not err and result and result.contents then
-        local hover = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
-        hover = vim.split(table.concat(hover, "\n"), "\n", { trimempty = true })
-        if #hover == 0 then hover = nil end
-        if #hover > 0 then
-          table.insert(lines, "## LSP")
-          vim.list_extend(lines, hover)
-        end
+        local md = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
+        md = vim.split(table.concat(md, "\n"), "\n", { trimempty = true })
+        if #md > 0 then hover_lines = md end
       end
 
-      if hover == nil and vim.tbl_isempty(lines) then
+      -- nothing to show? fall back to default hover
+      if (not hover_lines) and vim.tbl_isempty(lines) then
         return vim.lsp.buf.hover()
       end
 
+      if hover_lines then
+        table.insert(lines, "## Hover")
+        vim.list_extend(lines, hover_lines)
+      end
 
-      local fbuf, fwin = vim.lsp.util.open_floating_preview(lines, "markdown", { border = "rounded", focusable = true })
+      local fbuf, fwin = vim.lsp.util.open_floating_preview(
+        lines, "markdown", { border = "rounded", focusable = true }
+      )
       hover_state.win = fwin
+      vim.api.nvim_set_current_win(fwin) -- focus so q/Esc work
 
-      -- focus the float so buffer-local mappings work
-      vim.api.nvim_set_current_win(fwin)
-
-      -- close helper
       local function close_float()
         if hover_state.win and vim.api.nvim_win_is_valid(hover_state.win) then
           pcall(vim.api.nvim_win_close, hover_state.win, true)
@@ -132,14 +139,13 @@ do
         hover_state.win = nil
       end
 
-      -- allow q / Esc to close the float
       for _, key in ipairs({ "q", "<Esc>" }) do
         vim.keymap.set("n", key, close_float, { buffer = fbuf, nowait = true, noremap = true, silent = true })
       end
     end)
   end
 
-  -- K toggles the combined float
+  -- K toggles combined diagnostics + hover
   vim.keymap.set("n", "K", function()
     if hover_state.win and vim.api.nvim_win_is_valid(hover_state.win) then
       pcall(vim.api.nvim_win_close, hover_state.win, true)
