@@ -50,6 +50,7 @@ s - flash jump
 / to to search, n to jump, . to repeat
 zz - center the current line in the window
 <leader> - - open yazi
+<leader> a - show code structure
 ```
 
 #### Copy and paste
