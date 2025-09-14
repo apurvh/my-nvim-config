@@ -530,6 +530,21 @@ require("lazy").setup({
     end,
   },
 
+  {
+    "akinsho/toggleterm.nvim",
+    version = "*",
+    opts = {
+      open_mapping = [[<leader>t]], -- same toggle key
+      direction = "float",
+      float_opts = {
+        border = "rounded",
+        width  = function() return math.floor(vim.o.columns * 0.90) end,
+        height = function() return math.floor(vim.o.lines * 0.80) end,
+      },
+      start_in_insert = true,
+      shade_terminals = false,
+    },
+  }
 
 }, {
   change_detection = { notify = false },
