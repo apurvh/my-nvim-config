@@ -65,6 +65,19 @@ p] p[ - paste in the current indent level
 K - preview diagnostics and LSP info
 ```
 
+#### Debugging (DAP)
+
+```
+<leader> xb - toggle breakpoint
+<leader> xB - conditional breakpoint
+<leader> xc - continue/start debugging
+<leader> xo - step over
+<leader> xi - step into
+<leader> xO - step out
+<leader> xr - open REPL
+<leader> xu - toggle DAP UI
+```
+
 #### Others
 
 ```
