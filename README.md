@@ -59,7 +59,7 @@ zz - center the current line in the window
 p] p[ - paste in the current indent level
 ```
 
-#### Copy and paste
+#### Info
 
 ```
 K - preview diagnostics and LSP info
@@ -81,5 +81,6 @@ K - preview diagnostics and LSP info
 #### Others
 
 ```
+<leader>o - Fold: toggle recursively at cursor
 <leader> / - comment/uncomment
 ```

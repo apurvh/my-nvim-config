@@ -70,6 +70,19 @@ vim.diagnostic.config({
   float = { border = "rounded", source = "if_many" },
 })
 
+-- Tree-sitter folds + default view = only top-level open
+vim.opt.foldmethod     = "expr"
+vim.opt.foldexpr       = "nvim_treesitter#foldexpr()"
+vim.opt.foldenable     = true
+vim.opt.foldlevelstart = 1   -- on file open: show only top-level
+vim.opt.foldlevel      = 1   -- keep windows at level 1 unless you change it
+
+vim.opt.foldcolumn     = "3" -- little gutter for folds
+vim.opt.fillchars:append({ foldopen = "", foldclose = "", fold = " ", foldsep = " " })
+vim.opt.foldtext = "v:lua.vim.treesitter.foldtext()"
+
+vim.keymap.set("n", "<leader>o", "zA", { desc = "Fold: toggle recursively at cursor", silent = true })
+
 do
   local hover_state = { win = nil }
 
