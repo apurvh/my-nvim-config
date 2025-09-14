@@ -544,6 +544,16 @@ require("lazy").setup({
       start_in_insert = true,
       shade_terminals = false,
     },
+  },
+
+
+  -- yazi.nvim — single key: <leader>-  (open at current file)
+  {
+    "mikavilpas/yazi.nvim",
+    version = "*",
+    keys = {
+      { "<leader>-", "<cmd>Yazi<CR>", desc = "Yazi (here)", mode = { "n", "v" } },
+    },
   }
 
 }, {

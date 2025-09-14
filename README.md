@@ -49,6 +49,7 @@ s - flash jump
 `C-o` back / `C-i` forward
 / to to search, n to jump, . to repeat
 zz - center the current line in the window
+<leader> - - open yazi
 ```
 
 #### Copy and paste
