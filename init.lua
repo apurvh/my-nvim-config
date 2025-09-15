@@ -220,7 +220,9 @@ require("lazy").setup({
       { "<leader>sr", function() require("telescope.builtin").resume() end,                                        desc = "Resume last Telescope" },
       { "<leader>sa", function() require("telescope.builtin").find_files({ hidden = true, no_ignore = true }) end, desc = "Find all files (hidden+ignored)" },
       { "<leader>st", function() require("telescope.builtin").treesitter() end,                                    desc = "Buffer symbols (Treesitter)" },
+      { "<leader>j",  function() require("telescope.builtin").treesitter() end,                                    desc = "Buffer symbols (Treesitter)" },
       { "<leader>sj", function() require("telescope.builtin").jumplist() end,                                      desc = "Jumplist" },
+      { "<leader>k",  function() require("telescope.builtin").jumplist() end,                                      desc = "Jumplist" },
     },
     opts = {
       defaults = {

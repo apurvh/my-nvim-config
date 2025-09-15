@@ -51,6 +51,8 @@ s - flash jump
 zz - center the current line in the window
 <leader> - - open yazi
 <leader> a - show code structure
+<leader> j - search and jump to symbols
+<leader> k - search and jump to jumplist
 ```
 
 #### Copy and paste
