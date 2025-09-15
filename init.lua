@@ -74,8 +74,8 @@ vim.diagnostic.config({
 vim.opt.foldmethod     = "expr"
 vim.opt.foldexpr       = "nvim_treesitter#foldexpr()"
 vim.opt.foldenable     = true
-vim.opt.foldlevelstart = 1   -- on file open: show only top-level
-vim.opt.foldlevel      = 1   -- keep windows at level 1 unless you change it
+vim.opt.foldlevelstart = 0   -- on file open: show only top-level
+vim.opt.foldlevel      = 0   -- keep windows at level 1 unless you change it
 
 vim.opt.foldcolumn     = "3" -- little gutter for folds
 vim.opt.fillchars:append({ foldopen = "", foldclose = "", fold = " ", foldsep = " " })
