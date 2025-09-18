@@ -195,6 +195,12 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
+  -- Autocomplete: blink.cmp (fast, minimal setup)
+  {
+    "saghen/blink.cmp",
+    version = "v0.*",
+    opts = {},
+  },
   -- Telescope core
   {
     "nvim-telescope/telescope.nvim",
@@ -286,9 +292,13 @@ require("lazy").setup({
 
   {
     "neovim/nvim-lspconfig",
+    dependencies = { "saghen/blink.cmp" },
     config = function()
       local lspconfig = require("lspconfig")
       local has_tb, tb = pcall(require, "telescope.builtin")
+
+      -- Enhance LSP capabilities for completion via blink.cmp
+      local capabilities = require("blink.cmp").get_lsp_capabilities()
 
       -- buffer-local maps for Python LSP buffers
       local function on_attach(_, bufnr)
@@ -306,6 +316,7 @@ require("lazy").setup({
 
       -- Python type checker: basedpyright
       lspconfig.basedpyright.setup({
+        capabilities = capabilities,
         on_attach = on_attach,
         settings = {
           basedpyright = {
@@ -319,6 +330,7 @@ require("lazy").setup({
 
       -- Python lints/quick fixes: Ruff LSP
       lspconfig.ruff.setup({
+        capabilities = capabilities,
         on_attach = function(client, bufnr)
           -- prefer basedpyright's hover if both attach
           client.server_capabilities.hoverProvider = false
