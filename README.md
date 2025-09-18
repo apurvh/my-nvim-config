@@ -87,5 +87,4 @@ K - preview diagnostics and LSP info
 ```
 <leader> o - Fold: toggle recursively at cursor
 <leader> / - comment/uncomment
-<leader> t - open floating terminal
 ```
