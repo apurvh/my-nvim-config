@@ -565,6 +565,79 @@ require("lazy").setup({
     keys = {
       { "<leader>a", "<cmd>AerialToggle! left<CR>", desc = "Aerial: toggle outline" },
     },
+  },
+
+  -- Tests: neotest + pytest adapter
+  {
+    "nvim-neotest/neotest",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-neotest/nvim-nio",
+      "nvim-neotest/neotest-python",
+      -- Optional but often helpful to reduce CursorHold latency
+      "antoinemadec/FixCursorHold.nvim",
+    },
+    keys = function()
+      local nt = require("neotest")
+      local map = function(lhs, rhs, desc)
+        return { lhs, rhs, desc = desc, mode = "n", silent = true }
+      end
+      return {
+        map("<leader>tn", function() nt.run.run() end,                                "Test: run nearest"),
+        map("<leader>tj", function() nt.run.run(vim.fn.expand("%")) end,             "Test: run file"),
+        map("<leader>tl", function() nt.run.run_last() end,                           "Test: run last"),
+        map("<leader>ts", function() nt.summary.toggle() end,                         "Test: summary"),
+        map("<leader>to", function() nt.output_panel.toggle() end,                    "Test: output panel"),
+        map("<leader>td", function() nt.run.run({ strategy = "dap" }) end,           "Test: debug nearest"),
+        map("<leader>tx", function() nt.run.stop() end,                               "Test: stop"),
+      }
+    end,
+    opts = function()
+      local uv  = vim.uv or vim.loop
+      local sep = package.config:sub(1, 1)
+      local function project_root()
+        local buf = vim.api.nvim_buf_get_name(0)
+        local dir = (buf ~= "" and vim.fn.fnamemodify(buf, ":p:h")) or uv.cwd()
+        local markers = { "pyproject.toml", "setup.cfg", "setup.py", ".git" }
+        while dir and dir ~= "/" do
+          for _, m in ipairs(markers) do
+            if uv.fs_stat(dir .. sep .. m) then return dir end
+          end
+          local parent = vim.fn.fnamemodify(dir, ":h")
+          if parent == dir then break end
+          dir = parent
+        end
+        return uv.cwd()
+      end
+      local function python_path()
+        local root = project_root()
+        local bin  = (uv.os_uname().sysname == "Windows_NT") and ("Scripts" .. sep .. "python.exe")
+            or ("bin" .. sep .. "python")
+        local p    = table.concat({ root, ".venv", bin }, sep)
+        if uv.fs_stat(p) then return p end
+        return nil
+      end
+
+      local py = python_path()
+      return {
+        adapters = {
+          require("neotest-python")({
+            runner = "pytest",
+            args = { "-q" }, -- quieter output by default
+            dap = { justMyCode = false },
+            python = py,      -- use <root>/.venv if found; else fallback to PATH python
+          }),
+        },
+        quickfix = { open = false },
+        summary = { follow = true },
+        output = { open_on_run = false },
+        discovery = { concurrent = 1 },
+      }
+    end,
+    config = function(_, opts)
+      require("neotest").setup(opts)
+    end,
   }
 
 }, {
