@@ -70,17 +70,27 @@ p] p[ - paste in the current indent level
 K - preview diagnostics and LSP info
 ```
 
+#### Testing (neotest)
+
+```
+<leader> tn - run nearest test
+<leader> tj - run file
+<leader> tl - run last
+<leader> ts - toggle summary
+<leader> to - toggle output panel
+<leader> td - debug nearest (sets a breakpoint at cursor first)
+<leader> tx - stop tests
+```
+
 #### Debugging (DAP)
 
 ```
-<leader> xb - toggle breakpoint
-<leader> xB - conditional breakpoint
-<leader> xc - continue/start debugging
-<leader> xo - step over
-<leader> xi - step into
-<leader> xO - step out
-<leader> xr - open REPL
-<leader> xu - toggle DAP UI
+<leader> b  - toggle breakpoint
+
+Debug flow:
+- Press <leader> td at the test line to start a debug session; a breakpoint is set at the cursor so execution pauses immediately.
+- DAP UI auto-opens on start and closes on stop.
+- Use the DAP UI buttons to Continue / Step Over / Step Into / Step Out / Stop (no extra n/i/o/c mappings).
 ```
 
 #### Others
