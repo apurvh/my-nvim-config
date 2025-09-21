@@ -37,9 +37,10 @@ vim motions such as ci", d}, yw, yyp
 #### LSP keymaps
 
 ```
-<leader> ld - go to def
-<leader> la - open code actions
-format-on-save
+<leader> ld - go to definition
+<leader> la - code actions
+K           - diagnostics + LSP hover (toggle)
+format-on-save (via Conform/LSP)
 ```
 
 #### Navigation
