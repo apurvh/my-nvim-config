@@ -86,11 +86,14 @@ K - preview diagnostics and LSP info
 
 ```
 <leader> b  - toggle breakpoint
+<leader> di - step into
+<leader> do - step out
 
 Debug flow:
 - Press <leader> td at the test line to start a debug session; a breakpoint is set at the cursor so execution pauses immediately.
-- DAP UI auto-opens on start and closes on stop.
-- Use the DAP UI buttons to Continue / Step Over / Step Into / Step Out / Stop (no extra n/i/o/c mappings).
+- During a DAP session in code buffers: `r` = continue/run, `m` = step over.
+- Use <leader> di / <leader> do for step into/out.
+- DAP UI auto-opens on start and closes on stop. You can also use its buttons for step/continue/stop.
 ```
 
 #### Others

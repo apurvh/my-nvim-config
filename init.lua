@@ -438,6 +438,8 @@ require("lazy").setup({
       local dap = require("dap")
       return {
         { "<leader>b", function() dap.toggle_breakpoint() end, desc = "Breakpoint: toggle", mode = "n", silent = true },
+        { "<leader>di", function() dap.step_into() end,       desc = "DAP: Step into",       mode = "n", silent = true },
+        { "<leader>do", function() dap.step_out() end,        desc = "DAP: Step out",        mode = "n", silent = true },
       }
     end,
     config = function()
@@ -529,7 +531,51 @@ require("lazy").setup({
       dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
       dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
 
-      -- Use DAP UI buttons/menus for stepping; no extra keymaps added
+      -- r/m single-keystroke in code buffers only while a DAP session is active
+      local rm_state = { bufs = {}, augroup = nil }
+
+      local function should_map(buf)
+        local bt = vim.bo[buf].buftype
+        local ft = vim.bo[buf].filetype or ""
+        if bt ~= "" then return false end            -- only normal file buffers
+        if ft == "dap-repl" then return false end     -- not the REPL
+        if ft:match("^dapui_") then return false end  -- not DAP UI panes
+        return true
+      end
+
+      local function map_buf(buf)
+        if not should_map(buf) then return end
+        if vim.b[buf].dap_rm_mapped then return end
+        local dap = require("dap")
+        vim.keymap.set("n", "r", function() dap.continue() end, { buffer = buf, silent = true, desc = "DAP: Continue" })
+        vim.keymap.set("n", "m", function() dap.step_over() end, { buffer = buf, silent = true, desc = "DAP: Step over" })
+        vim.b[buf].dap_rm_mapped = true
+        table.insert(rm_state.bufs, buf)
+      end
+
+      local function unmap_all()
+        for _, b in ipairs(rm_state.bufs) do
+          pcall(vim.keymap.del, "n", "r", { buffer = b })
+          pcall(vim.keymap.del, "n", "m", { buffer = b })
+          pcall(function() vim.b[b].dap_rm_mapped = nil end)
+        end
+        rm_state.bufs = {}
+        if rm_state.augroup then
+          pcall(vim.api.nvim_del_augroup_by_id, rm_state.augroup)
+          rm_state.augroup = nil
+        end
+      end
+
+      dap.listeners.after.event_initialized["dap_rm_keys"] = function()
+        rm_state.augroup = vim.api.nvim_create_augroup("DapRMKeys", { clear = true })
+        vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
+          group = rm_state.augroup,
+          callback = function(args) map_buf(args.buf) end,
+        })
+        map_buf(vim.api.nvim_get_current_buf())
+      end
+      dap.listeners.before.event_terminated["dap_rm_keys"] = unmap_all
+      dap.listeners.before.event_exited["dap_rm_keys"]     = unmap_all
     end,
   },
 
