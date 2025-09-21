@@ -529,22 +529,7 @@ require("lazy").setup({
       dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
       dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
 
-      -- UI-only stepping keys: scope to DAP UI panes; keep <CR> for expand
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = { "dapui_scopes", "dapui_stacks", "dapui_breakpoints", "dapui_watches" },
-        callback = function(args)
-          local buf = args.buf
-          local dap = require("dap")
-          local function map(lhs, rhs, desc)
-            vim.keymap.set("n", lhs, rhs, { buffer = buf, silent = true, nowait = true, desc = desc })
-          end
-          map("n", function() dap.step_over() end, "DAP: Step over")
-          map("i", function() dap.step_into() end, "DAP: Step into")
-          map("o", function() dap.step_out() end,  "DAP: Step out")
-          map("c", function() dap.continue() end,  "DAP: Continue")
-          map("x", function() dap.terminate() end, "DAP: Stop")
-        end,
-      })
+      -- Use DAP UI buttons/menus for stepping; no extra keymaps added
     end,
   },
 
