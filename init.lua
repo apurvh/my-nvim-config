@@ -436,19 +436,8 @@ require("lazy").setup({
     "mfussenegger/nvim-dap",
     keys = function()
       local dap = require("dap")
-      local map = function(lhs, rhs, desc)
-        return { lhs, rhs, desc = desc, mode = "n", silent = true }
-      end
       return {
-        map("<leader>xb", function() dap.toggle_breakpoint() end, "DAP: Toggle breakpoint"),
-        map("<leader>xc", function() dap.continue() end, "DAP: Continue/Start"),
-        map("<leader>xo", function() dap.step_over() end, "DAP: Step over"),
-        map("<leader>xi", function() dap.step_into() end, "DAP: Step into"),
-        map("<leader>xO", function() dap.step_out() end, "DAP: Step out"),
-        map("<leader>xr", function() dap.repl.open() end, "DAP: REPL open"),
-        map("<leader>xB", function()
-          require("dap").set_breakpoint(vim.fn.input("Breakpoint Condition: "))
-        end, "DAP: Conditional breakpoint"),
+        { "<leader>b", function() dap.toggle_breakpoint() end, desc = "Breakpoint: toggle", mode = "n", silent = true },
       }
     end,
     config = function()
@@ -517,7 +506,7 @@ require("lazy").setup({
           cwd = project_root,
           pythonPath = python_path,     -- pinned to <root>/.venv
           console = "integratedTerminal",
-          justMyCode = false,
+          justMyCode = true,
           -- Uncomment while debugging setup:
           -- stopOnEntry = true,
           env = { DEBUGPY_LOG_DIR = vim.fn.stdpath("state") .. "/debugpy-logs" },
@@ -537,10 +526,25 @@ require("lazy").setup({
       dapui.setup(opts)
       -- Auto open/close the UI when sessions start/stop
       dap.listeners.after.event_initialized["dapui"] = function() dapui.open() end
-      -- dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
-      -- dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
-      -- Handy toggle
-      vim.keymap.set("n", "<leader>xu", function() dapui.toggle() end, { desc = "DAP UI toggle" })
+      dap.listeners.before.event_terminated["dapui"] = function() dapui.close() end
+      dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
+
+      -- UI-only stepping keys: scope to DAP UI panes; keep <CR> for expand
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "dapui_scopes", "dapui_stacks", "dapui_breakpoints", "dapui_watches" },
+        callback = function(args)
+          local buf = args.buf
+          local dap = require("dap")
+          local function map(lhs, rhs, desc)
+            vim.keymap.set("n", lhs, rhs, { buffer = buf, silent = true, nowait = true, desc = desc })
+          end
+          map("n", function() dap.step_over() end, "DAP: Step over")
+          map("i", function() dap.step_into() end, "DAP: Step into")
+          map("o", function() dap.step_out() end,  "DAP: Step out")
+          map("c", function() dap.continue() end,  "DAP: Continue")
+          map("x", function() dap.terminate() end, "DAP: Stop")
+        end,
+      })
     end,
   },
 
@@ -580,16 +584,24 @@ require("lazy").setup({
     },
     keys = function()
       local nt = require("neotest")
-      local map = function(lhs, rhs, desc)
+      local dap = require("dap")
+      local function map(lhs, rhs, desc)
         return { lhs, rhs, desc = desc, mode = "n", silent = true }
       end
+      local function debug_with_ephemeral_bp()
+        -- Ensure we pause at the current cursor line, then start debug
+        dap.set_breakpoint()
+        nt.run.run({ strategy = "dap" })
+      end
+
       return {
+        -- full neotest workflow
         map("<leader>tn", function() nt.run.run() end,                                "Test: run nearest"),
         map("<leader>tj", function() nt.run.run(vim.fn.expand("%")) end,             "Test: run file"),
         map("<leader>tl", function() nt.run.run_last() end,                           "Test: run last"),
         map("<leader>ts", function() nt.summary.toggle() end,                         "Test: summary"),
         map("<leader>to", function() nt.output_panel.toggle() end,                    "Test: output panel"),
-        map("<leader>td", function() nt.run.run({ strategy = "dap" }) end,           "Test: debug nearest"),
+        map("<leader>td", debug_with_ephemeral_bp,                                   "Test: debug nearest (paused)"),
         map("<leader>tx", function() nt.run.stop() end,                               "Test: stop"),
       }
     end,
@@ -625,7 +637,7 @@ require("lazy").setup({
           require("neotest-python")({
             runner = "pytest",
             args = { "-q" }, -- quieter output by default
-            dap = { justMyCode = false },
+            dap = { justMyCode = true },
             python = py,      -- use <root>/.venv if found; else fallback to PATH python
           }),
         },
