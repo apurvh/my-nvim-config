@@ -94,6 +94,28 @@ vim.opt.foldtext = "v:lua._foldtext()"
 
 vim.keymap.set("n", "<leader>o", "zA", { desc = "Fold: toggle recursively at cursor", silent = true })
 
+
+-- Global statusline + slim command area
+vim.opt.laststatus = 3                                     -- single statusline across splits
+vim.opt.showmode   = false                                 -- statusline will show mode
+vim.opt.cmdheight  = 0                                     -- hide cmdline when idle (needs 0.9+)
+vim.opt.shortmess:append({ W = true, I = true, c = true }) -- quieter messages
+
+-- Make gutters stable & crisp
+vim.opt.numberwidth   = 4
+vim.opt.signcolumn    = "yes:1"  -- fixed width
+vim.opt.cursorlineopt = "number" -- highlight only the line number (crisper feel)
+
+-- Consistent borders everywhere
+do
+  local orig = vim.lsp.util.open_floating_preview
+  function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
+    opts = opts or {}; opts.border = opts.border or "rounded"
+    return orig(contents, syntax, opts, ...)
+  end
+end
+
+
 do
   local hover_state = { win = nil }
 
@@ -233,7 +255,10 @@ require("lazy").setup({
     opts = {
       defaults = {
         sorting_strategy = "ascending",
-        layout_config = { prompt_position = "top" },
+        layout_strategy  = "horizontal",
+        layout_config    = { prompt_position = "top", preview_width = 0.50 },
+        path_display     = { "filename_first" }, -- easier to scan
+        borderchars      = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
       },
       pickers = {
         buffers = {
@@ -437,9 +462,9 @@ require("lazy").setup({
     keys = function()
       local dap = require("dap")
       return {
-        { "<leader>b", function() dap.toggle_breakpoint() end, desc = "Breakpoint: toggle", mode = "n", silent = true },
-        { "<leader>di", function() dap.step_into() end,       desc = "DAP: Step into",       mode = "n", silent = true },
-        { "<leader>do", function() dap.step_out() end,        desc = "DAP: Step out",        mode = "n", silent = true },
+        { "<leader>b",  function() dap.toggle_breakpoint() end, desc = "Breakpoint: toggle", mode = "n", silent = true },
+        { "<leader>di", function() dap.step_into() end,         desc = "DAP: Step into",     mode = "n", silent = true },
+        { "<leader>do", function() dap.step_out() end,          desc = "DAP: Step out",      mode = "n", silent = true },
       }
     end,
     config = function()
@@ -532,14 +557,14 @@ require("lazy").setup({
       dap.listeners.before.event_exited["dapui"]     = function() dapui.close() end
 
       -- r/m single-keystroke in code buffers only while a DAP session is active
-      local rm_state = { bufs = {}, augroup = nil }
+      local rm_state                                 = { bufs = {}, augroup = nil }
 
       local function should_map(buf)
         local bt = vim.bo[buf].buftype
         local ft = vim.bo[buf].filetype or ""
         if bt ~= "" then return false end            -- only normal file buffers
-        if ft == "dap-repl" then return false end     -- not the REPL
-        if ft:match("^dapui_") then return false end  -- not DAP UI panes
+        if ft == "dap-repl" then return false end    -- not the REPL
+        if ft:match("^dapui_") then return false end -- not DAP UI panes
         return true
       end
 
@@ -627,13 +652,13 @@ require("lazy").setup({
 
       return {
         -- full neotest workflow
-        map("<leader>tn", function() nt.run.run() end,                                "Test: run nearest"),
-        map("<leader>tj", function() nt.run.run(vim.fn.expand("%")) end,             "Test: run file"),
-        map("<leader>tl", function() nt.run.run_last() end,                           "Test: run last"),
-        map("<leader>ts", function() nt.summary.toggle() end,                         "Test: summary"),
-        map("<leader>to", function() nt.output_panel.toggle() end,                    "Test: output panel"),
-        map("<leader>td", debug_with_ephemeral_bp,                                   "Test: debug nearest (paused)"),
-        map("<leader>tx", function() nt.run.stop() end,                               "Test: stop"),
+        map("<leader>tn", function() nt.run.run() end, "Test: run nearest"),
+        map("<leader>tj", function() nt.run.run(vim.fn.expand("%")) end, "Test: run file"),
+        map("<leader>tl", function() nt.run.run_last() end, "Test: run last"),
+        map("<leader>ts", function() nt.summary.toggle() end, "Test: summary"),
+        map("<leader>to", function() nt.output_panel.toggle() end, "Test: output panel"),
+        map("<leader>td", debug_with_ephemeral_bp, "Test: debug nearest (paused)"),
+        map("<leader>tx", function() nt.run.stop() end, "Test: stop"),
       }
     end,
     opts = function()
@@ -669,7 +694,7 @@ require("lazy").setup({
             runner = "pytest",
             args = { "-q" }, -- quieter output by default
             dap = { justMyCode = true },
-            python = py,      -- use <root>/.venv if found; else fallback to PATH python
+            python = py,     -- use <root>/.venv if found; else fallback to PATH python
           }),
         },
         quickfix = { open = false },
@@ -681,7 +706,74 @@ require("lazy").setup({
     config = function(_, opts)
       require("neotest").setup(opts)
     end,
-  }
+  },
+
+  { "nvim-tree/nvim-web-devicons", opts = {} }, -- used by several steps below
+
+  {
+    "nvim-lualine/lualine.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    opts = {
+      options = {
+        globalstatus         = true,                      -- pairs perfectly with laststatus=3
+        component_separators = { left = "", right = "" }, -- clean
+        section_separators   = { left = "", right = "" },
+        disabled_filetypes   = { "neo-tree", "NvimTree" },
+      },
+      sections = {
+        lualine_a = { "mode" },
+        lualine_b = { "branch", "diff", "diagnostics" },
+        lualine_c = { { "filename", path = 1 } },
+        lualine_x = { "encoding", "fileformat", "filetype" },
+        lualine_y = { "progress" },
+        lualine_z = { "location" },
+      },
+    },
+  },
+
+  {
+    "luukvbaal/statuscol.nvim",
+    opts = function()
+      local builtin = require("statuscol.builtin")
+      return {
+        relculright = true,
+        segments = {
+          { text = { builtin.foldfunc },                                  click = "v:lua.ScFa" }, -- folds
+          { sign = { name = { "Diagnostic" }, maxwidth = 1, auto = true } },                      -- diagnostics
+          { text = { builtin.lnumfunc, " " },                             click = "v:lua.ScLa" }, -- numbers
+          { sign = { name = { ".*" }, maxwidth = 1, colwidth = 1 } },                             -- other signs (gitsigns etc.)
+        },
+      }
+    end,
+  },
+
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    opts = {
+      indent  = { char = "│" },
+      scope   = { enabled = true, char = "│" },
+      exclude = { filetypes = { "help", "alpha", "dashboard", "neo-tree", "Trouble" } },
+    },
+  },
+
+  {
+    "lewis6991/gitsigns.nvim",
+    opts = {
+      signs = {
+        add = { text = "▎" },
+        change = { text = "▎" },
+        delete = { text = "▎" },
+        topdelete = { text = "▔" },
+        changedelete = { text = "▎" },
+      },
+      signcolumn = true,
+      current_line_blame = false, -- turn on if you want; it’s tasteful but optional
+    },
+  },
+
+  { "petertriho/nvim-scrollbar",   opts = {} },
+
 
 }, {
   change_detection = { notify = false },
