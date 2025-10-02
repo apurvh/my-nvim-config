@@ -543,11 +543,32 @@ require("lazy").setup({
   }
   ,
 
-  -- DAP UI (nice sidebar + scopes, stacks, breakpoints)
+  -- DAP UI (custom layout: hide Breakpoints and Watches panes)
   {
     "rcarriga/nvim-dap-ui",
     dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
-    opts = {},
+    opts = {
+      layouts = {
+        {
+          -- Left sidebar: only Scopes and Stacks (no Breakpoints or Watches)
+          elements = {
+            { id = "scopes", size = 0.65 },
+            { id = "stacks", size = 0.35 },
+          },
+          size = 40,
+          position = "left",
+        },
+        {
+          -- Bottom tray unchanged: REPL + Console
+          elements = {
+            { id = "repl", size = 0.6 },
+            { id = "console", size = 0.4 },
+          },
+          size = 10,
+          position = "bottom",
+        },
+      },
+    },
     config = function(_, opts)
       local dap, dapui = require("dap"), require("dapui")
       dapui.setup(opts)
