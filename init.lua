@@ -498,30 +498,19 @@ require("lazy").setup({
         return mod
       end
 
-      -- STRICT: use <root>/.venv only (no fallback)
-      local function python_path()
-        local root = project_root()
-        local bin  = (uv.os_uname().sysname == "Windows_NT") and ("Scripts" .. sep .. "python.exe")
-            or ("bin" .. sep .. "python")
-        local p    = table.concat({ root, ".venv", bin }, sep)
-        if uv.fs_stat(p) then return p end
-        return nil
-      end
-
-      -- Lazy adapter: resolved only when a session starts
+      -- Adapter: run debugpy via uv (uv everywhere)
+      -- Requires uv on PATH; debugpy injected via --with
       dap.adapters.python = function(cb)
-        local py = python_path()
-        if not py then
+        if vim.fn.executable("uv") == 0 then
           vim.schedule(function()
-            vim.notify(
-              "DAP: no <project>/.venv Python found.\nRun:\n  uv venv\n  uv add --dev debugpy && uv sync",
-              vim.log.levels.ERROR
-            )
+            vim.notify("DAP: 'uv' not found in PATH. Install from https://github.com/astral-sh/uv", vim.log.levels.ERROR)
           end)
           return
         end
-        cb({ type = "executable", command = py, args = { "-m", "debugpy.adapter" } })
+        cb({ type = "executable", command = "uv", args = { "run", "--with", "debugpy", "python", "-m", "debugpy.adapter" } })
       end
+
+      -- (Simplified) No __main__ guard check; run current file directly
 
       -- Only the "run as module" config (Option A)
       dap.configurations.python = {
@@ -529,16 +518,46 @@ require("lazy").setup({
           type = "python",
           request = "launch",
           name = "Python: current file (module)",
-          module = current_module_name, -- runs `python -m <module>`
+          module = current_module_name, -- runs `python -m <module>` via uv-backed adapter
           cwd = project_root,
-          pythonPath = python_path,     -- pinned to <root>/.venv
           console = "integratedTerminal",
           justMyCode = true,
-          -- Uncomment while debugging setup:
           -- stopOnEntry = true,
           env = { DEBUGPY_LOG_DIR = vim.fn.stdpath("state") .. "/debugpy-logs" },
         },
+        {
+          type = "python",
+          request = "launch",
+          name = "Python: current file (uv run)",
+          program = "${file}",         -- runs like `uv run <current file>` via adapter
+          cwd = project_root,
+          console = "integratedTerminal",
+          justMyCode = true,
+          env = { DEBUGPY_LOG_DIR = vim.fn.stdpath("state") .. "/debugpy-logs" },
+        },
       }
+
+      -- Keymap: <leader>dr → run current file via uv in debugger
+      local function debug_current_file_via_uv()
+        local file = vim.api.nvim_buf_get_name(0)
+        if file == "" then
+          vim.notify("DAP: current buffer has no file name", vim.log.levels.ERROR)
+          return
+        end
+        dap.run({
+          type = "python",
+          request = "launch",
+          name = "Run current file (uv)",
+          program = file,
+          cwd = project_root(),
+          console = "integratedTerminal",
+          justMyCode = true,
+          env = { DEBUGPY_LOG_DIR = vim.fn.stdpath("state") .. "/debugpy-logs" },
+        })
+      end
+
+      vim.keymap.set("n", "<leader>dr", debug_current_file_via_uv,
+        { desc = "DAP: Run current file (uv)", silent = true })
     end,
   }
   ,
