@@ -718,23 +718,14 @@ require("lazy").setup({
         end
         return uv.cwd()
       end
-      local function python_path()
-        local root = project_root()
-        local bin  = (uv.os_uname().sysname == "Windows_NT") and ("Scripts" .. sep .. "python.exe")
-            or ("bin" .. sep .. "python")
-        local p    = table.concat({ root, ".venv", bin }, sep)
-        if uv.fs_stat(p) then return p end
-        return nil
-      end
-
-      local py = python_path()
+      -- No pinned interpreter here; let DAP/uv provide Python for debug runs
       return {
         adapters = {
           require("neotest-python")({
             runner = "pytest",
             args = { "-q" }, -- quieter output by default
-            dap = { justMyCode = true },
-            python = py,     -- use <root>/.venv if found; else fallback to PATH python
+            dap = { justMyCode = true, cwd = project_root },
+            -- python = nil  -- align with uv-backed adapter
           }),
         },
         quickfix = { open = false },
