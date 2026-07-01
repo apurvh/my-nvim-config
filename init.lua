@@ -16,6 +16,27 @@ vim.opt.timeoutlen = 500
 vim.opt.signcolumn = "yes"
 vim.opt.clipboard = "unnamedplus"
 
+local function transparent_background()
+  local groups = {
+    "Normal",
+    "NormalNC",
+    "EndOfBuffer",
+    "SignColumn",
+    "LineNr",
+    "CursorLineNr",
+    "FoldColumn",
+  }
+
+  for _, group in ipairs(groups) do
+    vim.cmd("highlight " .. group .. " guibg=NONE ctermbg=NONE")
+  end
+end
+
+transparent_background()
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = transparent_background,
+})
+
 -- Indentation defaults (we can adjust per-language later)
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 2
