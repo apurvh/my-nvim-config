@@ -9,6 +9,7 @@ vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.wrap = false
+vim.opt.scrolloff = 999
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.updatetime = 250
@@ -243,6 +244,14 @@ require("lazy").setup({
     "saghen/blink.cmp",
     version = "v0.*",
     opts = {},
+  },
+  {
+    "karb94/neoscroll.nvim",
+    opts = {
+      mappings = { "<C-u>", "<C-d>", "<C-b>", "<C-f>" },
+      hide_cursor = false,
+      easing = "quadratic",
+    },
   },
   -- Telescope core
   {
