@@ -271,6 +271,14 @@ require("lazy").setup({
       easing = "quadratic",
     },
   },
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    ft = { "markdown" },
+    opts = {
+      render_modes = { "n" },
+    },
+  },
   -- Telescope core
   {
     "nvim-telescope/telescope.nvim",
@@ -338,7 +346,7 @@ require("lazy").setup({
         "lua", "vim", "vimdoc", "query",
         "python",
         "bash", "json", "yaml", "toml",
-        "markdown", "regex",
+        "markdown", "markdown_inline", "regex",
         "html", "css", "javascript", "typescript", "tsx",
       },
       auto_install = true, -- install a parser automatically when you open a new filetype
