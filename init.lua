@@ -239,6 +239,24 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
+  {
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {
+      style = "night",
+      transparent = true,
+      styles = {
+        sidebars = "transparent",
+        floats = "transparent",
+      },
+    },
+    config = function(_, opts)
+      require("tokyonight").setup(opts)
+      vim.cmd.colorscheme("tokyonight-night")
+    end,
+  },
+
   -- Autocomplete: blink.cmp (fast, minimal setup)
   {
     "saghen/blink.cmp",
@@ -341,7 +359,7 @@ require("lazy").setup({
     "williamboman/mason-lspconfig.nvim",
     main = "mason-lspconfig",
     opts = {
-      ensure_installed = { "lua_ls", "basedpyright", "ruff" },
+      ensure_installed = { "lua_ls", "basedpyright", "ruff", "vtsls" },
     },
   },
 
@@ -355,7 +373,7 @@ require("lazy").setup({
       -- Enhance LSP capabilities for completion via blink.cmp
       local capabilities = require("blink.cmp").get_lsp_capabilities()
 
-      -- buffer-local maps for Python LSP buffers
+      -- buffer-local maps for LSP buffers
       local function on_attach(_, bufnr)
         local map = function(lhs, rhs, desc)
           vim.keymap.set("n", lhs, rhs, { buffer = bufnr, desc = desc })
@@ -393,6 +411,13 @@ require("lazy").setup({
         end,
         init_options = { settings = { logLevel = "error" } },
       })
+
+      -- TypeScript / JavaScript language support
+      vim.lsp.config("vtsls", {
+        capabilities = capabilities,
+        on_attach = on_attach,
+      })
+      vim.lsp.enable("vtsls")
     end,
   },
 
