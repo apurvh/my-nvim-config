@@ -712,11 +712,15 @@ require("lazy").setup({
 
   {
     "stevearc/aerial.nvim",
+    event = { "BufReadPost", "BufNewFile" },
     opts = {
       backends = { "treesitter", "lsp", "markdown" },               -- use what you already have
       manage_folds = false,                                         -- don't interfere with your folding setup
+      open_automatic = function(bufnr)
+        return vim.bo[bufnr].buftype == "" and vim.api.nvim_buf_get_name(bufnr) ~= ""
+      end,
       layout = {
-        default_direction = "right",
+        default_direction = "left",
         placement = "edge",
         resize_to_content = false,
         width = 32,
