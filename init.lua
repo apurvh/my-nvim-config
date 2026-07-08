@@ -9,6 +9,7 @@ vim.opt.number = true
 vim.opt.relativenumber = false
 vim.opt.cursorline = true
 vim.opt.wrap = false
+vim.opt.scrolloff = 999
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.updatetime = 250
@@ -238,11 +239,45 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
+  {
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {
+      style = "night",
+      transparent = true,
+      styles = {
+        sidebars = "transparent",
+        floats = "transparent",
+      },
+    },
+    config = function(_, opts)
+      require("tokyonight").setup(opts)
+      vim.cmd.colorscheme("tokyonight-night")
+    end,
+  },
+
   -- Autocomplete: blink.cmp (fast, minimal setup)
   {
     "saghen/blink.cmp",
     version = "v0.*",
     opts = {},
+  },
+  {
+    "karb94/neoscroll.nvim",
+    opts = {
+      mappings = { "<C-u>", "<C-d>", "<C-b>", "<C-f>" },
+      hide_cursor = false,
+      easing = "quadratic",
+    },
+  },
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    ft = { "markdown" },
+    opts = {
+      render_modes = { "n" },
+    },
   },
   -- Telescope core
   {
@@ -311,7 +346,7 @@ require("lazy").setup({
         "lua", "vim", "vimdoc", "query",
         "python",
         "bash", "json", "yaml", "toml",
-        "markdown", "regex",
+        "markdown", "markdown_inline", "regex",
         "html", "css", "javascript", "typescript", "tsx",
       },
       auto_install = true, -- install a parser automatically when you open a new filetype
@@ -332,7 +367,7 @@ require("lazy").setup({
     "williamboman/mason-lspconfig.nvim",
     main = "mason-lspconfig",
     opts = {
-      ensure_installed = { "lua_ls", "basedpyright", "ruff" },
+      ensure_installed = { "lua_ls", "basedpyright", "ruff", "vtsls" },
     },
   },
 
@@ -346,7 +381,7 @@ require("lazy").setup({
       -- Enhance LSP capabilities for completion via blink.cmp
       local capabilities = require("blink.cmp").get_lsp_capabilities()
 
-      -- buffer-local maps for Python LSP buffers
+      -- buffer-local maps for LSP buffers
       local function on_attach(_, bufnr)
         local map = function(lhs, rhs, desc)
           vim.keymap.set("n", lhs, rhs, { buffer = bufnr, desc = desc })
@@ -384,6 +419,13 @@ require("lazy").setup({
         end,
         init_options = { settings = { logLevel = "error" } },
       })
+
+      -- TypeScript / JavaScript language support
+      vim.lsp.config("vtsls", {
+        capabilities = capabilities,
+        on_attach = on_attach,
+      })
+      vim.lsp.enable("vtsls")
     end,
   },
 
