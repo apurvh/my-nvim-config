@@ -722,7 +722,12 @@ require("lazy").setup({
     opts = {
       backends = { "treesitter", "lsp", "markdown" },               -- use what you already have
       manage_folds = false,                                         -- don't interfere with your folding setup
-      layout = { default_direction = "right", placement = "edge" }, -- sidebar on the right
+      layout = {
+        default_direction = "right",
+        placement = "edge",
+        resize_to_content = false,
+        width = 32,
+      },
       highlight_on_jump = true,
     },
     keys = {
