@@ -238,6 +238,24 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+local last_telescope_picker = nil
+local function telescope_run(name, callback)
+  return function()
+    last_telescope_picker = name
+    callback(require("telescope.builtin"))
+  end
+end
+
+local function telescope_symbols()
+  local builtin = require("telescope.builtin")
+  if last_telescope_picker == "treesitter" then
+    builtin.resume()
+  else
+    last_telescope_picker = "treesitter"
+    builtin.treesitter()
+  end
+end
+
 require("lazy").setup({
   {
     "folke/tokyonight.nvim",
@@ -285,28 +303,28 @@ require("lazy").setup({
     version = false,
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-      { "<leader>sf", function() require("telescope.builtin").find_files() end,  desc = "Search files" },
-      { "<leader>sg", function() require("telescope.builtin").live_grep() end,   desc = "Grep in project" },
-      { "<leader>sd", function() require("telescope.builtin").diagnostics() end, desc = "Search diagnostics" },
-      { "<leader>sw", function() require("telescope.builtin").grep_string() end, desc = "Search word under cursor" },
+      { "<leader>sf", telescope_run("find_files", function(t) t.find_files() end),  desc = "Search files" },
+      { "<leader>sg", telescope_run("live_grep", function(t) t.live_grep() end),    desc = "Grep in project" },
+      { "<leader>sd", telescope_run("diagnostics", function(t) t.diagnostics() end), desc = "Search diagnostics" },
+      { "<leader>sw", telescope_run("grep_string", function(t) t.grep_string() end), desc = "Search word under cursor" },
       {
         "<leader><leader>",
-        function()
-          require("telescope.builtin").buffers({
+        telescope_run("buffers", function(t)
+          t.buffers({
             sort_mru = true,
             sort_lastused = true,
             ignore_current_buffer = true,
           })
-        end,
+        end),
         mode = "n",
         desc = "Buffers (MRU)"
       },
-      { "<leader>sr", function() require("telescope.builtin").resume() end,                                        desc = "Resume last Telescope" },
-      { "<leader>sa", function() require("telescope.builtin").find_files({ hidden = true, no_ignore = true }) end, desc = "Find all files (hidden+ignored)" },
-      { "<leader>st", function() require("telescope.builtin").treesitter() end,                                    desc = "Buffer symbols (Treesitter)" },
-      { "<leader>j",  function() require("telescope.builtin").treesitter() end,                                    desc = "Buffer symbols (Treesitter)" },
-      { "<leader>sj", function() require("telescope.builtin").jumplist() end,                                      desc = "Jumplist" },
-      { "<leader>k",  function() require("telescope.builtin").jumplist() end,                                      desc = "Jumplist" },
+      { "<leader>sr", function() require("telescope.builtin").resume() end,                                      desc = "Resume last Telescope" },
+      { "<leader>sa", telescope_run("find_files", function(t) t.find_files({ hidden = true, no_ignore = true }) end), desc = "Find all files (hidden+ignored)" },
+      { "<leader>st", telescope_run("treesitter", function(t) t.treesitter() end),                              desc = "Buffer symbols (Treesitter)" },
+      { "<leader>j",  telescope_symbols,                                                                       desc = "Buffer symbols (resume)" },
+      { "<leader>sj", telescope_run("jumplist", function(t) t.jumplist() end),                                  desc = "Jumplist" },
+      { "<leader>k",  telescope_run("jumplist", function(t) t.jumplist() end),                                  desc = "Jumplist" },
     },
     opts = {
       defaults = {
