@@ -92,31 +92,6 @@ vim.diagnostic.config({
   float = { border = "rounded", source = "if_many" },
 })
 
--- Tree-sitter folds + default view = only top-level open
-vim.opt.foldmethod     = "expr"
-vim.opt.foldexpr       = "nvim_treesitter#foldexpr()"
-vim.opt.foldenable     = true
-vim.opt.foldlevelstart = 0   -- on file open: show only top-level
-vim.opt.foldlevel      = 0   -- keep windows at level 1 unless you change it
-
-vim.opt.foldcolumn     = "3" -- little gutter for folds
-vim.opt.fillchars:append({ foldopen = "", foldclose = "", fold = " ", foldsep = " " })
-
--- ✅ Robust fold header: show the first nonblank line and line count
-_G._foldtext = function()
-  local start = vim.v.foldstart
-  local nb = vim.fn.nextnonblank(start)
-  if nb > 0 then start = nb end
-  local first = vim.fn.getline(start)
-  local lines = vim.v.foldend - vim.v.foldstart + 1
-  return (" %s … (%d lines)"):format(first, lines)
-end
-
-vim.opt.foldtext = "v:lua._foldtext()"
-
-vim.keymap.set("n", "<leader>o", "zA", { desc = "Fold: toggle recursively at cursor", silent = true })
-
-
 -- Global statusline + slim command area
 vim.opt.laststatus = 3                                     -- single statusline across splits
 vim.opt.showmode   = false                                 -- statusline will show mode
